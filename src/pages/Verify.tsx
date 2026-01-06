@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, CheckCircle, XCircle, AlertTriangle, Search, FileText, Brain, Link2 } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, AlertTriangle, FileText, Brain } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useDocuments } from '@/context/DocumentContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { DocumentCard } from '@/components/dashboard/DocumentCard';
+import { VerificationProgress } from '@/components/dashboard/VerificationProgress';
+import { VerificationResultCard } from '@/components/dashboard/VerificationResultCard';
+import { MarketReferenceCard } from '@/components/dashboard/MarketReferenceCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { verifyHash } from '@/lib/hashUtils';
 import { getRiskLabel } from '@/lib/aiAnalysis';
@@ -20,6 +22,9 @@ export default function Verify() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [verificationTime, setVerificationTime] = useState(0);
+  const startTimeRef = useRef<number>(0);
 
   if (!user) {
     navigate('/login');
@@ -46,26 +51,25 @@ export default function Verify() {
   const pendingDocuments = documents.filter((doc) => doc.status === 'registrado');
   const observedDocuments = documents.filter((doc) => doc.status === 'observado');
 
-  const runVerification = async (doc: Document) => {
-    setIsVerifying(true);
-    setSelectedDoc(doc);
-
-    // Simulate verification process
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
+  const handleVerificationComplete = () => {
+    if (!selectedDoc) return;
+    
+    const endTime = Date.now();
+    setVerificationTime(endTime - startTimeRef.current);
+    
     const zeroTrustChecks: ZeroTrustCheck[] = [
       {
         id: 'hash',
         name: 'Integridad de Hash',
         description: 'Hash SHA-256 coincide con el documento original',
-        passed: verifyHash(doc.hash, doc.versions[doc.currentVersion - 1].hash),
+        passed: verifyHash(selectedDoc.hash, selectedDoc.versions[selectedDoc.currentVersion - 1].hash),
         timestamp: new Date(),
       },
       {
         id: 'version',
         name: 'Historial de Versiones',
         description: 'Cadena de versiones íntegra sin modificaciones no autorizadas',
-        passed: doc.versions.length > 0 && doc.versions.every((v) => v.hash),
+        passed: selectedDoc.versions.length > 0 && selectedDoc.versions.every((v) => v.hash),
         timestamp: new Date(),
       },
       {
@@ -85,17 +89,26 @@ export default function Verify() {
     ];
 
     const result: VerificationResult = {
-      documentId: doc.id,
+      documentId: selectedDoc.id,
       hashMatch: zeroTrustChecks[0].passed,
       versionIntegrity: zeroTrustChecks[1].passed,
-      aiRiskAssessment: doc.riskIndicator,
+      aiRiskAssessment: selectedDoc.riskIndicator,
       zeroTrustChecks,
       verifiedAt: new Date(),
-      verifiedBy: user,
+      verifiedBy: user!,
     };
 
     setVerificationResult(result);
     setIsVerifying(false);
+    setShowResult(true);
+  };
+
+  const runVerification = (doc: Document) => {
+    setShowResult(false);
+    setVerificationResult(null);
+    startTimeRef.current = Date.now();
+    setIsVerifying(true);
+    setSelectedDoc(doc);
   };
 
   const handleAction = (action: 'validate' | 'observe') => {
@@ -103,6 +116,7 @@ export default function Verify() {
     updateDocumentStatus(selectedDoc.id, action === 'validate' ? 'validado' : 'observado');
     setSelectedDoc(null);
     setVerificationResult(null);
+    setShowResult(false);
   };
 
   return (
@@ -194,22 +208,36 @@ export default function Verify() {
 
           {/* Verification panel */}
           <div className="space-y-6">
+            {/* Verification Progress with animation */}
             {isVerifying && (
-              <div className="glass-card p-12 text-center">
-                <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">Verificando documento...</h3>
-                <p className="text-sm text-muted-foreground">
-                  Ejecutando validaciones Zero Trust
-                </p>
-              </div>
+              <VerificationProgress 
+                isVerifying={isVerifying} 
+                onComplete={handleVerificationComplete} 
+              />
             )}
 
-            {!isVerifying && verificationResult && selectedDoc && (
+            {/* Result card after verification */}
+            {showResult && verificationResult && selectedDoc && (
               <>
-                {/* Verification result */}
+                <VerificationResultCard 
+                  isValid={verificationResult.hashMatch && verificationResult.versionIntegrity}
+                  verificationTime={verificationTime || 1018}
+                  onBlockchain={true}
+                />
+
+                {/* Market reference */}
+                {selectedDoc.type === 'factura_comercial' && selectedDoc.data.items && (
+                  <MarketReferenceCard 
+                    productName={selectedDoc.data.items[0]?.description || 'Producto'}
+                    minPrice={Math.floor((selectedDoc.data.items[0]?.unitPrice || 600) * 0.9)}
+                    maxPrice={Math.floor((selectedDoc.data.items[0]?.unitPrice || 600) * 1.1)}
+                  />
+                )}
+
+                {/* Zero Trust checks */}
                 <div className="glass-card p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-semibold text-lg">Resultado de Verificación</h3>
+                    <h3 className="font-semibold text-lg">Validaciones Zero Trust</h3>
                     <Badge variant="verified" className="flex items-center gap-1">
                       <Shield className="w-3 h-3" />
                       Zero Trust
@@ -289,7 +317,7 @@ export default function Verify() {
               </>
             )}
 
-            {!isVerifying && !verificationResult && (
+            {!isVerifying && !showResult && (
               <div className="glass-card p-12 text-center">
                 <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-semibold mb-2">Selecciona un documento</h3>
