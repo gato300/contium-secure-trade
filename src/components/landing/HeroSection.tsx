@@ -27,7 +27,7 @@ export function HeroSection() {
           </div>
 
           {/* Main heading */}
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in" style={{
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in" style={{
           animationDelay: '0.1s'
         }}>
             <span className="text-foreground"></span>
