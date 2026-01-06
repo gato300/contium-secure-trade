@@ -36,7 +36,7 @@ export function HeroSection() {
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <span className="text-foreground">Erradica el </span>
             <span className="text-gradient">Fraude Aduanero</span>
-            <span className="text-foreground"> con IA</span>
+            <span className="text-foreground"> Blockchain</span>
           </h1>
 
           {/* Subtitle */}
