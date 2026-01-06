@@ -6,6 +6,8 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { BlockchainTimeline } from '@/components/dashboard/BlockchainTimeline';
 import { AIAnalysisCard } from '@/components/dashboard/AIAnalysisCard';
 import { ZeroTrustPanel } from '@/components/dashboard/ZeroTrustPanel';
+import { GasInfoCard } from '@/components/dashboard/GasInfoCard';
+import { MarketReferenceCard } from '@/components/dashboard/MarketReferenceCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { truncateHash } from '@/lib/hashUtils';
@@ -258,6 +260,19 @@ export default function DocumentDetail() {
 
           {/* Right column */}
           <div className="space-y-6">
+            <GasInfoCard 
+              gasUsed={Math.floor(80000 + Math.random() * 200000)} 
+              txHash={`0x${document.hash.slice(0, 40)}`}
+            />
+            
+            {document.type === 'factura_comercial' && document.data.items && (
+              <MarketReferenceCard 
+                productName={document.data.items[0]?.description || 'Producto'}
+                minPrice={Math.floor(document.data.items[0]?.unitPrice * 0.9) || 550}
+                maxPrice={Math.floor(document.data.items[0]?.unitPrice * 1.1) || 620}
+              />
+            )}
+            
             <BlockchainTimeline versions={[...document.versions].reverse()} />
             <ZeroTrustPanel />
           </div>
