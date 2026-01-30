@@ -1,6 +1,33 @@
-import { User, Document, UserRole } from './types';
+import { User, Document, UserRole, BlockchainTransaction, NFTBadge } from './types';
 
-// Mock Users
+// Syscoin NEVM Explorer URL
+export const SYSCOIN_EXPLORER_URL = 'https://explorer.syscoin.org/tx/';
+
+// Generate mock transaction hash
+export function generateTxHash(): string {
+  const chars = '0123456789abcdef';
+  let hash = '0x';
+  for (let i = 0; i < 64; i++) {
+    hash += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return hash;
+}
+
+// Generate mock blockchain transaction
+export function generateBlockchainTransaction(): BlockchainTransaction {
+  const txHash = generateTxHash();
+  return {
+    txHash,
+    blockNumber: Math.floor(4000000 + Math.random() * 100000),
+    gasUsed: Math.floor(80000 + Math.random() * 200000),
+    gasCost: parseFloat((0.001 + Math.random() * 0.01).toFixed(4)),
+    timestamp: new Date(),
+    status: 'confirmed',
+    explorerUrl: `${SYSCOIN_EXPLORER_URL}${txHash}`,
+  };
+}
+
+// Mock Users with scores and NFTs
 export const mockUsers: Record<UserRole, User> = {
   exportador: {
     id: 'user-001',
@@ -8,6 +35,19 @@ export const mockUsers: Record<UserRole, User> = {
     email: 'carlos@exportperu.com',
     role: 'exportador',
     company: 'Export Perú S.A.C.',
+    score: 145,
+    totalDocuments: 12,
+    nftBadges: [
+      {
+        id: 'nft-001',
+        type: 'compliance',
+        name: 'Compliance Badge #1',
+        description: 'NFT de cumplimiento por verificación exitosa',
+        txHash: '0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
+        mintedAt: new Date('2024-01-15T10:31:00'),
+        documentId: 'doc-001',
+      },
+    ],
   },
   importador: {
     id: 'user-002',
@@ -15,6 +55,9 @@ export const mockUsers: Record<UserRole, User> = {
     email: 'maria@importchile.cl',
     role: 'importador',
     company: 'Import Chile Ltda.',
+    score: 85,
+    totalDocuments: 8,
+    nftBadges: [],
   },
   agente_aduanas: {
     id: 'user-003',
@@ -22,6 +65,18 @@ export const mockUsers: Record<UserRole, User> = {
     email: 'roberto@aduanas.com',
     role: 'agente_aduanas',
     company: 'Agencia Aduanera Continental',
+    score: 210,
+    totalDocuments: 25,
+    nftBadges: [
+      {
+        id: 'nft-002',
+        type: 'verification',
+        name: 'Verification Master',
+        description: 'NFT por 20+ verificaciones exitosas',
+        txHash: '0xb2c3d4e5f67890123456789012345678901234567890abcdef1234567890abcd',
+        mintedAt: new Date('2024-01-10T15:00:00'),
+      },
+    ],
   },
   autoridad: {
     id: 'user-004',
@@ -29,6 +84,18 @@ export const mockUsers: Record<UserRole, User> = {
     email: 'ana.torres@sunat.gob.pe',
     role: 'autoridad',
     company: 'SUNAT - Aduanas',
+    score: 520,
+    totalDocuments: 0,
+    nftBadges: [
+      {
+        id: 'nft-003',
+        type: 'verification',
+        name: 'Gold Verifier',
+        description: 'NFT por 50+ verificaciones exitosas',
+        txHash: '0xc3d4e5f678901234567890123456789012345678901234567890abcdef123456',
+        mintedAt: new Date('2024-01-05T09:00:00'),
+      },
+    ],
   },
 };
 
@@ -41,7 +108,7 @@ export const marketPriceRanges: Record<string, { min: number; max: number; avg: 
   '9403.60': { min: 50, max: 300, avg: 175 }, // Furniture
 };
 
-// Initial mock documents
+// Initial mock documents with blockchain data
 export const initialDocuments: Document[] = [
   {
     id: 'doc-001',
@@ -56,6 +123,7 @@ export const initialDocuments: Document[] = [
         timestamp: new Date('2024-01-15T10:30:00'),
         actor: mockUsers.exportador,
         changes: 'Documento registrado inicialmente',
+        txHash: '0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
       },
     ],
     registeredBy: mockUsers.exportador,
@@ -85,6 +153,24 @@ export const initialDocuments: Document[] = [
       totalValue: 29000,
       currency: 'USD',
     },
+    blockchain: {
+      txHash: '0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
+      blockNumber: 4123456,
+      gasUsed: 125000,
+      gasCost: 0.0045,
+      timestamp: new Date('2024-01-15T10:30:00'),
+      status: 'confirmed',
+      explorerUrl: 'https://explorer.syscoin.org/tx/0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
+    },
+    nftBadge: {
+      id: 'nft-001',
+      type: 'compliance',
+      name: 'Compliance Badge #FC-2024-001',
+      description: 'NFT de cumplimiento por verificación exitosa',
+      txHash: '0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123457',
+      mintedAt: new Date('2024-01-15T10:32:00'),
+      documentId: 'doc-001',
+    },
   },
   {
     id: 'doc-002',
@@ -99,6 +185,7 @@ export const initialDocuments: Document[] = [
         timestamp: new Date('2024-01-16T14:00:00'),
         actor: mockUsers.exportador,
         changes: 'Documento registrado inicialmente',
+        txHash: '0xd4e5f678901234567890123456789012345678901234567890abcdef12345678',
       },
       {
         version: 2,
@@ -106,6 +193,7 @@ export const initialDocuments: Document[] = [
         timestamp: new Date('2024-01-16T15:30:00'),
         actor: mockUsers.exportador,
         changes: 'Corrección de cantidad de unidades',
+        txHash: '0xe5f6789012345678901234567890123456789012345678901234567890abcdef1',
       },
     ],
     registeredBy: mockUsers.exportador,
@@ -127,13 +215,22 @@ export const initialDocuments: Document[] = [
         {
           description: 'Smartphone Samsung Galaxy S23',
           quantity: 200,
-          unitPrice: 120, // Subvaluado!
+          unitPrice: 120,
           totalPrice: 24000,
           hsCode: '8517.12',
         },
       ],
       totalValue: 24000,
       currency: 'USD',
+    },
+    blockchain: {
+      txHash: '0xd4e5f678901234567890123456789012345678901234567890abcdef12345678',
+      blockNumber: 4123789,
+      gasUsed: 145000,
+      gasCost: 0.0052,
+      timestamp: new Date('2024-01-16T14:00:00'),
+      status: 'confirmed',
+      explorerUrl: 'https://explorer.syscoin.org/tx/0xd4e5f678901234567890123456789012345678901234567890abcdef12345678',
     },
   },
   {
@@ -149,6 +246,7 @@ export const initialDocuments: Document[] = [
         timestamp: new Date('2024-01-15T11:00:00'),
         actor: mockUsers.exportador,
         changes: 'Documento registrado inicialmente',
+        txHash: '0xf6789012345678901234567890123456789012345678901234567890abcdef12',
       },
     ],
     registeredBy: mockUsers.exportador,
@@ -164,6 +262,15 @@ export const initialDocuments: Document[] = [
       totalWeight: 150,
       totalVolume: 0.48,
     },
+    blockchain: {
+      txHash: '0xf6789012345678901234567890123456789012345678901234567890abcdef12',
+      blockNumber: 4123500,
+      gasUsed: 95000,
+      gasCost: 0.0034,
+      timestamp: new Date('2024-01-15T11:00:00'),
+      status: 'confirmed',
+      explorerUrl: 'https://explorer.syscoin.org/tx/0xf6789012345678901234567890123456789012345678901234567890abcdef12',
+    },
   },
   {
     id: 'doc-004',
@@ -178,6 +285,7 @@ export const initialDocuments: Document[] = [
         timestamp: new Date('2024-01-15T14:00:00'),
         actor: mockUsers.agente_aduanas,
         changes: 'DAM registrada con documentación de soporte',
+        txHash: '0x789012345678901234567890123456789012345678901234567890abcdef1234',
       },
     ],
     registeredBy: mockUsers.agente_aduanas,
@@ -191,7 +299,24 @@ export const initialDocuments: Document[] = [
       regime: '10 - Importación para el Consumo',
       linkedDocuments: ['doc-001', 'doc-003'],
     },
+    blockchain: {
+      txHash: '0x789012345678901234567890123456789012345678901234567890abcdef1234',
+      blockNumber: 4123600,
+      gasUsed: 180000,
+      gasCost: 0.0065,
+      timestamp: new Date('2024-01-15T14:00:00'),
+      status: 'confirmed',
+      explorerUrl: 'https://explorer.syscoin.org/tx/0x789012345678901234567890123456789012345678901234567890abcdef1234',
+    },
   },
+];
+
+// Mock leaderboard data
+export const mockLeaderboard = [
+  { user: mockUsers.autoridad, verificationsCount: 52, documentsRegistered: 0, nftBadgesCount: 3, rank: 1 },
+  { user: mockUsers.agente_aduanas, verificationsCount: 21, documentsRegistered: 25, nftBadgesCount: 2, rank: 2 },
+  { user: mockUsers.exportador, verificationsCount: 8, documentsRegistered: 12, nftBadgesCount: 1, rank: 3 },
+  { user: mockUsers.importador, verificationsCount: 5, documentsRegistered: 8, nftBadgesCount: 0, rank: 4 },
 ];
 
 // Role labels in Spanish

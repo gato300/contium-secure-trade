@@ -1,18 +1,22 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, XCircle, AlertTriangle, ExternalLink, Award } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useDocuments } from '@/context/DocumentContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { BlockchainTimeline } from '@/components/dashboard/BlockchainTimeline';
 import { AIAnalysisCard } from '@/components/dashboard/AIAnalysisCard';
 import { ZeroTrustPanel } from '@/components/dashboard/ZeroTrustPanel';
-import { GasInfoCard } from '@/components/dashboard/GasInfoCard';
+import { BlockchainTxCard } from '@/components/dashboard/BlockchainTxCard';
+import { NFTBadgeCard } from '@/components/dashboard/NFTBadgeCard';
+import { MintBadgeButton } from '@/components/dashboard/MintBadgeButton';
 import { MarketReferenceCard } from '@/components/dashboard/MarketReferenceCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { truncateHash } from '@/lib/hashUtils';
+import { SYSCOIN_EXPLORER_URL } from '@/lib/mockData';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const typeLabels = {
   factura_comercial: 'Factura Comercial',
@@ -30,7 +34,7 @@ export default function DocumentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { getDocumentById, updateDocumentStatus } = useDocuments();
+  const { getDocumentById, updateDocumentStatus, mintNFTBadge } = useDocuments();
 
   if (!user) {
     navigate('/login');
@@ -58,6 +62,15 @@ export default function DocumentDetail() {
   }
 
   const status = statusConfig[document.status];
+
+  const handleMintBadge = () => {
+    const badge = mintNFTBadge(document.id);
+    if (badge) {
+      toast.success('¡NFT Emitido!', {
+        description: `Compliance Badge registrado en blockchain`,
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,6 +105,13 @@ export default function DocumentDetail() {
                 {status.label}
               </Badge>
               
+              {document.nftBadge && (
+                <Badge variant="verified" className="flex items-center gap-1">
+                  <Award className="w-3 h-3" />
+                  NFT
+                </Badge>
+              )}
+              
               {user.role === 'autoridad' && document.status === 'registrado' && (
                 <div className="flex gap-2">
                   <Button 
@@ -115,9 +135,22 @@ export default function DocumentDetail() {
             </div>
           </div>
 
-          {/* Hash display */}
+          {/* Hash display with explorer link */}
           <div className="mt-6 p-4 rounded-lg bg-secondary/50">
-            <p className="text-xs text-muted-foreground mb-1">Hash SHA-256</p>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Hash SHA-256</p>
+              {document.blockchain && (
+                <a 
+                  href={document.blockchain.explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Ver en Explorer
+                </a>
+              )}
+            </div>
             <code className="font-mono text-sm break-all">{document.hash}</code>
           </div>
 
@@ -139,6 +172,16 @@ export default function DocumentDetail() {
               </p>
             </div>
           </div>
+
+          {/* Mint Badge button for validated documents */}
+          {document.status === 'validado' && !document.nftBadge && (
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <MintBadgeButton 
+                document={document} 
+                onMint={handleMintBadge}
+              />
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -256,14 +299,19 @@ export default function DocumentDetail() {
             {document.aiAnalysis && (
               <AIAnalysisCard analysis={document.aiAnalysis} />
             )}
+
+            {/* NFT Badge Card (if minted) */}
+            {document.nftBadge && (
+              <NFTBadgeCard badge={document.nftBadge} />
+            )}
           </div>
 
           {/* Right column */}
           <div className="space-y-6">
-            <GasInfoCard 
-              gasUsed={Math.floor(80000 + Math.random() * 200000)} 
-              txHash={`0x${document.hash.slice(0, 40)}`}
-            />
+            {/* Blockchain Transaction Card */}
+            {document.blockchain && (
+              <BlockchainTxCard transaction={document.blockchain} />
+            )}
             
             {document.type === 'factura_comercial' && document.data.items && (
               <MarketReferenceCard 
