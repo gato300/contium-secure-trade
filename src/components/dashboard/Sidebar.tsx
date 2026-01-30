@@ -9,7 +9,8 @@ import {
   Package,
   ShoppingCart,
   FileCheck,
-  User
+  Trophy,
+  Award
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { roleLabels } from '@/lib/mockData';
@@ -58,20 +59,38 @@ export function Sidebar() {
           </div>
           <div>
             <span className="font-bold text-lg text-sidebar-foreground">CONTIUM</span>
-            <p className="text-xs text-sidebar-foreground/60">Demo</p>
+            <p className="text-xs text-sidebar-foreground/60">Syscoin NEVM</p>
           </div>
         </div>
       </div>
 
-      {/* User info */}
+      {/* User info with Score */}
       <div className="p-4 mx-4 mt-4 rounded-xl bg-sidebar-accent">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
             <RoleIcon className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm text-sidebar-foreground truncate">{user.name}</p>
             <p className="text-xs text-sidebar-foreground/60">{roleLabels[user.role]}</p>
+          </div>
+        </div>
+        
+        {/* Score and NFT display */}
+        <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-sidebar-border/50">
+          <div className="flex items-center gap-1.5 p-2 rounded-lg bg-sidebar/50">
+            <Trophy className="w-4 h-4 text-warning" />
+            <div>
+              <p className="text-lg font-bold text-sidebar-foreground">{user.score || 0}</p>
+              <p className="text-[10px] text-sidebar-foreground/60">Score</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 p-2 rounded-lg bg-sidebar/50">
+            <Award className="w-4 h-4 text-primary" />
+            <div>
+              <p className="text-lg font-bold text-sidebar-foreground">{user.nftBadges?.length || 0}</p>
+              <p className="text-[10px] text-sidebar-foreground/60">NFTs</p>
+            </div>
           </div>
         </div>
       </div>

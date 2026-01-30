@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, CheckCircle, XCircle, AlertTriangle, FileText, Brain } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, AlertTriangle, FileText, Brain, Award, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useDocuments } from '@/context/DocumentContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
@@ -8,22 +8,26 @@ import { DocumentCard } from '@/components/dashboard/DocumentCard';
 import { VerificationProgress } from '@/components/dashboard/VerificationProgress';
 import { VerificationResultCard } from '@/components/dashboard/VerificationResultCard';
 import { MarketReferenceCard } from '@/components/dashboard/MarketReferenceCard';
+import { MintBadgeButton } from '@/components/dashboard/MintBadgeButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { verifyHash } from '@/lib/hashUtils';
 import { getRiskLabel } from '@/lib/aiAnalysis';
-import { Document, VerificationResult, ZeroTrustCheck } from '@/lib/types';
+import { generateTxHash, SYSCOIN_EXPLORER_URL } from '@/lib/mockData';
+import { Document, VerificationResult, ZeroTrustCheck, NFTBadge } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function Verify() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { documents, updateDocumentStatus } = useDocuments();
+  const { documents, updateDocumentStatus, mintNFTBadge } = useDocuments();
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [verificationTime, setVerificationTime] = useState(0);
+  const [validationTxHash, setValidationTxHash] = useState<string | null>(null);
   const startTimeRef = useRef<number>(0);
 
   if (!user) {
@@ -56,6 +60,8 @@ export default function Verify() {
     
     const endTime = Date.now();
     setVerificationTime(endTime - startTimeRef.current);
+    const txHash = generateTxHash();
+    setValidationTxHash(txHash);
     
     const zeroTrustChecks: ZeroTrustCheck[] = [
       {
@@ -96,6 +102,7 @@ export default function Verify() {
       zeroTrustChecks,
       verifiedAt: new Date(),
       verifiedBy: user!,
+      txHash,
     };
 
     setVerificationResult(result);
@@ -106,6 +113,7 @@ export default function Verify() {
   const runVerification = (doc: Document) => {
     setShowResult(false);
     setVerificationResult(null);
+    setValidationTxHash(null);
     startTimeRef.current = Date.now();
     setIsVerifying(true);
     setSelectedDoc(doc);
@@ -114,9 +122,27 @@ export default function Verify() {
   const handleAction = (action: 'validate' | 'observe') => {
     if (!selectedDoc) return;
     updateDocumentStatus(selectedDoc.id, action === 'validate' ? 'validado' : 'observado');
+    
+    if (action === 'validate') {
+      toast.success('Documento Validado', {
+        description: `TX Hash: ${validationTxHash?.slice(0, 20)}...`,
+      });
+    } else {
+      toast.warning('Documento Observado', {
+        description: 'El documento ha sido marcado para revisión',
+      });
+    }
+    
     setSelectedDoc(null);
     setVerificationResult(null);
     setShowResult(false);
+    setValidationTxHash(null);
+  };
+
+  const handleMintBadge = (badge: NFTBadge) => {
+    toast.success('¡NFT Emitido!', {
+      description: `Compliance Badge registrado en blockchain`,
+    });
   };
 
   return (
@@ -225,6 +251,27 @@ export default function Verify() {
                   onBlockchain={true}
                 />
 
+                {/* TX Hash display */}
+                {validationTxHash && (
+                  <div className="glass-card p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">TX Hash de Verificación</span>
+                      <a 
+                        href={`${SYSCOIN_EXPLORER_URL}${validationTxHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Ver en Explorer
+                      </a>
+                    </div>
+                    <code className="text-xs font-mono break-all text-muted-foreground">
+                      {validationTxHash}
+                    </code>
+                  </div>
+                )}
+
                 {/* Market reference */}
                 {selectedDoc.type === 'factura_comercial' && selectedDoc.data.items && (
                   <MarketReferenceCard 
@@ -313,6 +360,17 @@ export default function Verify() {
                     <AlertTriangle className="w-5 h-5 mr-2" />
                     Observar
                   </Button>
+                </div>
+
+                {/* Mint Badge option after validation info */}
+                <div className="glass-card p-4 border-2 border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Award className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-sm">Emisión de NFT</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Al validar el documento, podrás emitir un Compliance Badge (NFT ERC-721) como prueba de cumplimiento en Syscoin NEVM.
+                  </p>
                 </div>
               </>
             )}

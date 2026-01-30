@@ -8,6 +8,29 @@ export interface User {
   email: string;
   role: UserRole;
   company: string;
+  score?: number;
+  totalDocuments?: number;
+  nftBadges?: NFTBadge[];
+}
+
+export interface NFTBadge {
+  id: string;
+  type: 'compliance' | 'verification' | 'registration';
+  name: string;
+  description: string;
+  txHash: string;
+  mintedAt: Date;
+  documentId?: string;
+}
+
+export interface BlockchainTransaction {
+  txHash: string;
+  blockNumber: number;
+  gasUsed: number;
+  gasCost: number; // in USD
+  timestamp: Date;
+  status: 'pending' | 'confirmed' | 'failed';
+  explorerUrl: string;
 }
 
 export type DocumentType = 'factura_comercial' | 'packing_list' | 'dam';
@@ -22,6 +45,7 @@ export interface DocumentVersion {
   timestamp: Date;
   actor: User;
   changes: string;
+  txHash?: string;
 }
 
 export interface AIAnalysis {
@@ -45,6 +69,8 @@ export interface Document {
   createdAt: Date;
   updatedAt: Date;
   data: DocumentData;
+  blockchain?: BlockchainTransaction;
+  nftBadge?: NFTBadge;
 }
 
 export interface DocumentData {
@@ -99,4 +125,13 @@ export interface VerificationResult {
   zeroTrustChecks: ZeroTrustCheck[];
   verifiedAt: Date;
   verifiedBy: User;
+  txHash?: string;
+}
+
+export interface LeaderboardEntry {
+  user: User;
+  verificationsCount: number;
+  documentsRegistered: number;
+  nftBadgesCount: number;
+  rank: number;
 }

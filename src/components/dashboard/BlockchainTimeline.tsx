@@ -1,6 +1,7 @@
-import { Link2, FileText, Clock, User } from 'lucide-react';
+import { Link2, FileText, Clock, User, ExternalLink } from 'lucide-react';
 import { DocumentVersion } from '@/lib/types';
 import { truncateHash } from '@/lib/hashUtils';
+import { SYSCOIN_EXPLORER_URL } from '@/lib/mockData';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -16,7 +17,7 @@ export function BlockchainTimeline({ versions, title = 'Historial Inmutable' }: 
       <div className="flex items-center gap-2 mb-6">
         <Link2 className="w-5 h-5 text-primary" />
         <h3 className="font-semibold">{title}</h3>
-        <span className="text-xs text-muted-foreground ml-auto">Tipo Blockchain</span>
+        <span className="text-xs text-muted-foreground ml-auto">Syscoin NEVM</span>
       </div>
 
       <div className="relative">
@@ -61,6 +62,22 @@ export function BlockchainTimeline({ versions, title = 'Historial Inmutable' }: 
                     {truncateHash(version.hash, 24)}
                   </code>
                 </div>
+
+                {/* TX Hash with explorer link */}
+                {version.txHash && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs text-muted-foreground">TX Hash:</span>
+                    <a 
+                      href={`${SYSCOIN_EXPLORER_URL}${version.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-primary hover:underline font-mono"
+                    >
+                      {truncateHash(version.txHash, 16)}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
 
                 {/* Actor */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

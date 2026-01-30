@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Document, DocumentType, DocumentStatus, User, DocumentData } from '@/lib/types';
-import { initialDocuments } from '@/lib/mockData';
+import { Document, DocumentType, DocumentStatus, User, DocumentData, NFTBadge } from '@/lib/types';
+import { initialDocuments, generateBlockchainTransaction, generateTxHash, SYSCOIN_EXPLORER_URL } from '@/lib/mockData';
 import { generateHash } from '@/lib/hashUtils';
 import { analyzeDocument } from '@/lib/aiAnalysis';
 
@@ -13,6 +13,7 @@ interface DocumentContextType {
     registeredBy: User
   ) => Promise<Document>;
   updateDocumentStatus: (id: string, status: DocumentStatus) => void;
+  mintNFTBadge: (documentId: string) => NFTBadge | null;
   getDocumentById: (id: string) => Document | undefined;
   getDocumentsByType: (type: DocumentType) => Document[];
   getDocumentsByUser: (userId: string) => Document[];
@@ -31,6 +32,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   ): Promise<Document> => {
     const hash = await generateHash(data);
     const now = new Date();
+    const blockchain = generateBlockchainTransaction();
     
     // Run AI analysis for commercial invoices
     let aiAnalysis;
@@ -54,6 +56,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
           timestamp: now,
           actor: registeredBy,
           changes: 'Documento registrado inicialmente',
+          txHash: blockchain.txHash,
         },
       ],
       registeredBy,
@@ -63,6 +66,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       createdAt: now,
       updatedAt: now,
       data,
+      blockchain,
     };
 
     setDocuments((prev) => [...prev, newDocument]);
@@ -75,6 +79,30 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         doc.id === id ? { ...doc, status, updatedAt: new Date() } : doc
       )
     );
+  };
+
+  const mintNFTBadge = (documentId: string): NFTBadge | null => {
+    const doc = documents.find((d) => d.id === documentId);
+    if (!doc || doc.nftBadge) return null;
+
+    const txHash = generateTxHash();
+    const badge: NFTBadge = {
+      id: `nft-${Date.now()}`,
+      type: 'compliance',
+      name: `Compliance Badge #${doc.title.split('#')[1] || doc.id}`,
+      description: 'NFT de cumplimiento emitido por verificación exitosa en Contium',
+      txHash,
+      mintedAt: new Date(),
+      documentId,
+    };
+
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === documentId ? { ...d, nftBadge: badge } : d
+      )
+    );
+
+    return badge;
   };
 
   const getDocumentById = (id: string) => {
@@ -95,6 +123,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         documents,
         addDocument,
         updateDocumentStatus,
+        mintNFTBadge,
         getDocumentById,
         getDocumentsByType,
         getDocumentsByUser,

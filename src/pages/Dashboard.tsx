@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { FileText, AlertTriangle, CheckCircle, Clock, Plus, Shield } from 'lucide-react';
+import { FileText, AlertTriangle, CheckCircle, Clock, Plus, Shield, Trophy } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useDocuments } from '@/context/DocumentContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DocumentCard } from '@/components/dashboard/DocumentCard';
 import { ZeroTrustPanel } from '@/components/dashboard/ZeroTrustPanel';
+import { UserScoreCard } from '@/components/dashboard/UserScoreCard';
+import { LeaderboardCard } from '@/components/dashboard/LeaderboardCard';
 import { Button } from '@/components/ui/button';
-import { roleLabels } from '@/lib/mockData';
+import { roleLabels, mockLeaderboard } from '@/lib/mockData';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -92,7 +94,7 @@ export default function Dashboard() {
         {/* Main content */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Documents */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Documentos Recientes</h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/documents')}>
@@ -125,10 +127,23 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
+
+            {/* Leaderboard */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-warning" />
+                <h2 className="text-xl font-semibold">Ranking de Verificaciones</h2>
+              </div>
+              <LeaderboardCard entries={mockLeaderboard} currentUserId={user.id} />
+            </div>
           </div>
 
-          {/* Zero Trust Panel */}
+          {/* Right sidebar */}
           <div className="space-y-4">
+            {/* User Score Card */}
+            <UserScoreCard user={user} />
+
+            {/* Zero Trust Panel */}
             <ZeroTrustPanel />
             
             {/* Quick actions based on role */}
